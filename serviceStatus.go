@@ -3,58 +3,64 @@ package mta
 import (
 	"encoding/xml"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
+
+func init() {
+	flag.Parse()
+}
 
 type Service struct {
 	Timestamp string `xml:"timestamp"`
 	Subway    struct {
-		Line []struct {
-			Name   string `xml:"name"`
-			Status string `xml:"status"`
-			Text   string `xml:"text"`
-			Date   string `xml:"date"`
-			Time   string `xml:"time"`
-		} `xml:"line"`
+		Lines []Line `xml:"line"`
 	} `xml:"subway"`
+}
+
+type Line struct {
+	Name   string `xml:"name"`
+	Status string `xml:"status"`
+	Text   string `xml:"text"`
+	Date   string `xml:"date"`
+	Time   string `xml:"time"`
+}
+
+func GetLine(service Service, line string) (Line, error) {
+	for _, l := range service.Subway.Lines {
+		if strings.Contains(l.Name, line) {
+			//l.Text = html.UnescapeString(l.Text)
+			return l, nil
+		}
+	}
+	return Line{}, errors.New("Line not found: " + line)
 }
 
 const serviceStatusURL = "http://mta.info/status/serviceStatus.txt"
 
-func newError(fmtStr string, err error) error {
-	return errors.New(fmt.Sprintf(fmtStr, err))
-}
-
 // Gets the service status for all MTA subway lines.
-func GetSubwayStatus() (service Service, err error) {
-	MTAURL, err := url.Parse(serviceStatusURL)
+func GetSubwayStatus(mtaurl ...string) (Service, error) {
+	MTAURL := serviceStatusURL
+	if len(mtaurl) > 0 {
+		MTAURL = mtaurl[0]
+	}
+	body, err := getContents(MTAURL)
 	if err != nil {
-		return service, newError("Error parsing URL: %v", err)
+		return Service{}, err
 	}
-	resp, err := http.Get(MTAURL.String())
+	sanitized := sanitizeInput(body)
+	var service Service
+	err = xml.Unmarshal(sanitized, &service)
 	if err != nil {
-		return service, newError("Error getting URL: %v", err)
+		return Service{}, newError(err, "Error unmarshaling XML data:")
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return service, newError("Error reading response body: %v", err)
-	}
-	bodyBytes := make([]byte, 0)
-	for _, rune := range body {
-		if "U+0000" != fmt.Sprintf("%U", rune) {
-			bodyBytes = append(bodyBytes, rune)
-		}
-	}
-	err = xml.Unmarshal(bodyBytes, &service)
-	if err != nil {
-		return service, newError("Error unmarshaling XML data: %v", err)
-	}
-	return
+	return service, err
 }
 
 func PrintSubwayStatus() {
@@ -62,7 +68,39 @@ func PrintSubwayStatus() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, line := range service.Subway.Line {
+	for _, line := range service.Subway.Lines {
 		fmt.Printf("%5s : %-20s\n", line.Name, line.Status)
 	}
+}
+
+func getContents(source string) ([]byte, error) {
+	MTAURL, err := url.Parse(source)
+	if err != nil {
+		return []byte{}, newError(err, "Error parsing URL:", MTAURL.String())
+	}
+	resp, err := http.Get(MTAURL.String())
+	if err != nil {
+		return []byte{}, newError(err, "Error getting URL:", MTAURL.String())
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(&io.LimitedReader{resp.Body, 50000000})
+	return body, err
+}
+
+func sanitizeInput(dirty []byte) []byte {
+	clean := make([]byte, 0)
+	for _, b := range dirty {
+		if "U+0000" != fmt.Sprintf("%U", b) {
+			clean = append(clean, b)
+		}
+	}
+	return clean
+}
+
+func newError(err error, contexts ...string) error {
+	var prefix string
+	for _, context := range contexts {
+		prefix += context + " "
+	}
+	return errors.New(prefix + err.Error())
 }
