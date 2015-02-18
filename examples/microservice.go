@@ -41,15 +41,19 @@ var allLinesTempl = `
 	</head>
 	<body>
 	{{range $i, $lineName := .}}
-		<a href="/{{.}}">{{.}}</a><br/>
+		<a href="/{{.}}">{{upper .}}</a><br/>
 	{{end}}
 	</body>
 </html>
 `
+func upper(s string) string {
+	return strings.ToUpper(s)
+}
 
 func serveAllLines(lineNames []string) func(w http.ResponseWriter, r *http.Request) {
+	funcMap := template.FuncMap{"upper" : upper}
 	templName := "all_train_lines"
-	templ, err := template.New(templName).Parse(allLinesTempl)
+	templ, err := template.New(templName).Funcs(funcMap).Parse(allLinesTempl)
 	if err != nil {
 		log.Fatalf("Failed to parse template %v with error %v", templName, err)
 	}
