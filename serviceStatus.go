@@ -3,7 +3,6 @@ package mta
 import (
 	"encoding/xml"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,10 +11,6 @@ import (
 	"net/url"
 	"strings"
 )
-
-func init() {
-	flag.Parse()
-}
 
 type Service struct {
 	Timestamp string `xml:"timestamp"`
