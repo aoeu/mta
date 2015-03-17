@@ -13,6 +13,18 @@ import (
 )
 
 var port = flag.String("port", ":8080", "port on which to serve")
+var lineNames = []string{
+	"1", "2", "3",
+	"4", "5", "6",
+	"7",
+	"A", "C", "E",
+	"B", "D", "F", "M",
+	"G",
+	"J", "Z",
+	"L",
+	"N", "Q", "R",
+	"S",
+	"SIR"}
 
 func main() {
 	flag.Parse()
@@ -21,13 +33,13 @@ func main() {
 		log.Fatalf("Problem getting subway status: %v", err)
 	}
 	allLineNames := make([]string, 0)
-	for _, lineName := range []string{"1", "2", "3", "4", "5", "6", "7", "A", "C", "E", "B", "D", "F", "M", "G", "J", "Z", "L", "N", "Q", "R", "S", "SIR"} {
+	for _, lineName := range lineNames {
+		lineName = strings.ToUpper(lineName)
 		handler := serveLine(service, lineName)
 		http.HandleFunc("/"+lineName, handler)
-		if strings.ToUpper(lineName) != strings.ToLower(lineName) {
-			lineName := strings.ToLower(lineName)
-			allLineNames = append(allLineNames, lineName)
-			http.HandleFunc("/"+lineName, handler)
+		allLineNames = append(allLineNames, lineName)
+		if l := strings.ToLower(lineName); l != lineName {
+			http.HandleFunc("/"+l, handler)
 		}
 	}
 	http.HandleFunc("/", serveAllLines(allLineNames))
@@ -46,12 +58,13 @@ var allLinesTempl = `
 	</body>
 </html>
 `
+
 func upper(s string) string {
 	return strings.ToUpper(s)
 }
 
 func serveAllLines(lineNames []string) func(w http.ResponseWriter, r *http.Request) {
-	funcMap := template.FuncMap{"upper" : upper}
+	funcMap := template.FuncMap{"upper": upper}
 	templName := "all_train_lines"
 	templ, err := template.New(templName).Funcs(funcMap).Parse(allLinesTempl)
 	if err != nil {
