@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -58,6 +56,17 @@ var allLinesTempl = `
 	</body>
 </html>
 `
+var singleLineTempl = `
+<html>
+	<head>
+		<title>{{.Name}} - MTA Service Status</title>
+	</head>
+	<body>
+		<p>{{.Status}}</p>
+		<p>{{.Text}}</p>
+	</body
+</html>
+`
 
 func upper(s string) string {
 	return strings.ToUpper(s)
@@ -77,23 +86,20 @@ func serveAllLines(lineNames []string) func(w http.ResponseWriter, r *http.Reque
 
 func serveLine(service mta.Service, lineName string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		templName := "train_line"
+		templ, err := template.New(templName).Parse(singleLineTempl)
+		if err != nil {
+			log.Fatalf("Failed to parse template %v with error %v", templName, err)
+		}
 		line, err := mta.GetLine(service, lineName)
 		if err != nil {
 			http.Error(w, "Unknown line.", http.StatusNotFound)
 			return
 		}
-		marshalled, err := json.Marshal(line)
 		if err != nil {
 			http.Error(w, "Programmer error.", http.StatusInternalServerError)
 			return
 		}
-		//fmt.Fprint(w, "<!DOCTYPE html>"+string(marshalled))
-		fmt.Fprint(w, begin+"line = "+string(marshalled)+"; \ndocument.write(line.Status); \nif (line.Text.length > 0) { \n\tdocument.write(line.Text); \n} else { \n\tdocument.Write(line.Status);\n}"+end)
+		templ.Execute(w, line)
 	}
 }
-
-const begin = `
-<script language="javascript">`
-const end = `;
-</script>
-`
