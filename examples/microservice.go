@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/aoeu/mta"
 )
@@ -64,7 +64,7 @@ var singleLineTempl = `
 	<body>
 		<p>{{.Status}}</p>
 		<p>{{.Text}}</p>
-	</body
+	</body>
 </html>
 `
 
@@ -100,6 +100,9 @@ func serveLine(service mta.Service, lineName string) func(w http.ResponseWriter,
 			http.Error(w, "Programmer error.", http.StatusInternalServerError)
 			return
 		}
-		templ.Execute(w, line)
+		if err := templ.Execute(w, line); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
