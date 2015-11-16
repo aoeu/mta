@@ -1,0 +1,9 @@
+http://datamine.mta.info/sites/all/files/pdfs/GTFS-Realtime-NYC-Subway%20version%201%20dated%207%20Sep.pdf
+http://www.grpc.io/faq/
+https://github.com/aoeu/protobuf
+
+Track deltas of departure times and the next arrival time at the following stop?
+Is it possible to track one Trip ID and average the amount of time it takes between each stop?
+If comparing against the averages, is it possible to determine if a train is stalled between two stops?
+In any case, is there an update message on the feed that states whether the a particular trip ID is delayed?
+The train was held with an announcement message at Graham Ave - is that also represented on the feed?
