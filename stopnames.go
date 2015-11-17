@@ -1,4 +1,6 @@
-{
+package mta
+
+var stopNames = StopNames{
     "L01": "8 Av",
     "L01N": "8 Av",
     "L01S": "8 Av",
@@ -70,5 +72,5 @@
     "L28S": "E 105 St",
     "L29": "Canarsie - Rockaway Pkwy",
     "L29N": "Canarsie - Rockaway Pkwy",
-    "L29S": "Canarsie - Rockaway Pkwy"
+    "L29S": "Canarsie - Rockaway Pkwy",
 }

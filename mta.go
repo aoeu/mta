@@ -21,63 +21,110 @@ type StopNames map[StopID]StopName
 var URL string = "http://datamine.mta.info/mta_esi.php?key=%v&feed_id=2"
 var key string = "TODO(aoeu): Implement a secure method for passing in an API key."
 var stopsFileName string = "data/static/stops_l_train.json"
-var stopNames StopNames
 
-func GetNextLTrain() {
-	b, err := ioutil.ReadFile(stopsFileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = json.Unmarshal(b, &stopNames)
-	if err != nil {
-		log.Fatal(err)
-	}
+func GetFeedMessage(key string) (*transit.FeedMessage, error) {
 	url := fmt.Sprintf(URL, key)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		return &transit.FeedMessage{}, err
 	}
 	defer resp.Body.Close()
-	b, err = ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return &transit.FeedMessage{}, err
+	}
+	m := &transit.FeedMessage{}
+	err = proto.Unmarshal(b, m)
+	if err != nil {
+		return m, err
+	}
+	return m, nil
+}
+
+func ReadStopNamesFile(stopsAsJSONFileName string) (StopNames, error) {
+	s := make(StopNames, 0)
+	b, err := ioutil.ReadFile(stopsAsJSONFileName)
+	if err != nil {
+		return s, err
+	}
+	err = json.Unmarshal(b, s)
+	if err != nil {
+		return s, err
+	}
+	return s, nil
+}
+
+type StopTime struct {
+	TripID string
+	StopName
+	StopID
+	Arrival time.Time
+	Departure time.Time
+}
+
+func NewStopTime(t *transit.TripDescriptor, s *transit.TripUpdate_StopTimeUpdate) *StopTime {
+	stopID := StopID(s.GetStopId())
+	return &StopTime {
+		TripID: t.GetTripId(),
+		StopName : stopNames[stopID],
+		StopID : stopID,
+		Arrival : time.Unix(s.GetArrival().GetTime(), 0),
+		Departure : time.Unix(s.GetDeparture().GetTime(), 0),
+	}
+}
+
+func (st StopTime) String() string {
+	s := int(time.Since(st.Arrival).Seconds()) * -1
+	m := int(s) / 60
+	ss := int(s) - (m * 60)
+	return fmt.Sprintf("The L train %v arrives at %v in %v minutes and %v seconds. Arrives at %v and departs at %v",
+			st.TripID, st.StopName, m, ss, st.Arrival, st.Departure)
+
+}
+
+func GetStopTimes(key string) ([]StopTime, error) {
+	m, err := GetFeedMessage(key)
+	if err != nil {
+		return make([]StopTime, 0), err
+	}
+	var entities []*transit.FeedEntity = m.GetEntity() // TODO(aoeu): Can protoc name the method GetEntities()?
+	stopTimes := make([]StopTime, 0)
+	for _, e := range entities {
+		var tripUpdate *transit.TripUpdate = e.GetTripUpdate()
+		if tripUpdate == nil { // TODO(aoeu): Can FeedEntities have a type that we can switch on?
+			continue
+		}
+		var stopTimeUpdates []*transit.TripUpdate_StopTimeUpdate = tripUpdate.GetStopTimeUpdate()
+		var tripDescriptor *transit.TripDescriptor = tripUpdate.GetTrip()
+		for _, stu := range stopTimeUpdates {
+			st := NewStopTime(tripDescriptor, stu)
+			stopTimes = append(stopTimes, *st)
+		}
+	}
+	return stopTimes, nil
+}
+
+func GetNextLTrains(key string) {
+	st, err := GetStopTimes(key)
 	if err != nil {
 		log.Fatal(err)
 	}
-	m := new(transit.FeedMessage)
-	proto.Unmarshal(b, m)
-
-	var entities []*transit.FeedEntity = m.GetEntity()
-
-	for _, e := range entities {
-		tu := e.GetTripUpdate()
-		if tu == nil {
-			// TODO(aoeu): What are these other messages that are not TripUpdates in the FeedMessage entities?
+	for _, s := range st {
+		/*
+		TODO(aoeu): Why does it appear that bogus timestamps are on the data? Even other sites reflect this.
+		if !re.Match([]byte(s.TripID)) { // TODO(aoeu): Assert that this check isn't needed.
+			log.Println("trip ID", s.TripID)
 			continue
 		}
-		t := tu.GetTrip()
-		stopTimeUpdates := tu.GetStopTimeUpdate()
-
-		if !re.Match([]byte(t.GetTripId())) {
+		if s.StopID != "L13N" {
+			log.Println("stop ID", s.StopID)
 			continue
 		}
-		for _, stu := range stopTimeUpdates {
-			id := stu.GetStopId()
-			if id != "L13N" {
-				continue
-			}
-			n := stopNames[StopID(id)]
-			a := time.Unix(stu.GetArrival().GetTime(), 0)
-			d := time.Unix(stu.GetDeparture().GetTime(), 0)
-			next := time.Since(a)
-			if next > 0 {
-				continue
-			}
-			s := int(next.Seconds()) * -1
-			m := int(s) / 60
-			ss := int(s) - (m * 60)
-			log.Printf("The next L train (%v) arrives at %v in %v minutes and %v seconds and departs at %v\n",
-				t.GetTripId(), n, m, ss, d)
-			return
+		if t := time.Since(s.Arrival); t > 0 {
+			log.Println("arrival time happened", t)
+			continue
 		}
+		*/
+		fmt.Println(s)
 	}
-
 }

@@ -1,7 +1,13 @@
-default: run
+default: build
+
+build:
+	go install cmd/ltrain.go
 
 run:
-	go run cmd/ltrain.go
+	ltrain -key `decrypt $$ARG1`
+
+montrose:
+	ltrain -key `decrypt $$ARG1` | grep -i montrose
 
 protoc:
 	protoc --go_out=. transit_realtime/gtfs-realtime.proto
