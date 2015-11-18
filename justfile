@@ -6,6 +6,10 @@ build:
 run:
 	ltrain -key `decrypt $$ARG1`
 
+fmt:
+	go fmt *.go
+	go fmt cmd/*.go
+
 montrose:
 	ltrain -key `decrypt $$ARG1` | grep -i montrose
 

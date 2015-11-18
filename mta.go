@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"sort"
 	"time"
 )
 
@@ -58,18 +59,18 @@ type StopTime struct {
 	TripID string
 	StopName
 	StopID
-	Arrival time.Time
+	Arrival   time.Time
 	Departure time.Time
 }
 
 func NewStopTime(t *transit.TripDescriptor, s *transit.TripUpdate_StopTimeUpdate) *StopTime {
 	stopID := StopID(s.GetStopId())
-	return &StopTime {
-		TripID: t.GetTripId(),
-		StopName : stopNames[stopID],
-		StopID : stopID,
-		Arrival : time.Unix(s.GetArrival().GetTime(), 0),
-		Departure : time.Unix(s.GetDeparture().GetTime(), 0),
+	return &StopTime{
+		TripID:    t.GetTripId(),
+		StopName:  stopNames[stopID],
+		StopID:    stopID,
+		Arrival:   time.Unix(s.GetArrival().GetTime(), 0),
+		Departure: time.Unix(s.GetDeparture().GetTime(), 0),
 	}
 }
 
@@ -78,8 +79,24 @@ func (st StopTime) String() string {
 	m := int(s) / 60
 	ss := int(s) - (m * 60)
 	return fmt.Sprintf("The L train %v arrives at %v in %v minutes and %v seconds. Arrives at %v and departs at %v",
-			st.TripID, st.StopName, m, ss, st.Arrival, st.Departure)
+		st.TripID, st.StopName, m, ss, st.Arrival, st.Departure)
 
+}
+
+type StopTimes []StopTime
+
+func (s *StopTimes) Len() int {
+	return len(*s)
+}
+
+func (s *StopTimes) Less(i, j int) bool {
+	si := (*s)[i]
+	sj := (*s)[j]
+	return si.Arrival.Before(sj.Arrival)
+}
+
+func (s *StopTimes) Swap(i, j int) {
+	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
 }
 
 func GetStopTimes(key string) ([]StopTime, error) {
@@ -104,14 +121,19 @@ func GetStopTimes(key string) ([]StopTime, error) {
 	return stopTimes, nil
 }
 
-func GetNextLTrains(key string) {
+func GetNextLTrains(key string) (StopTimes, error) {
+	st, err := GetStopTimes(key)
+	return st, err
+}
+
+func GetNextMontroseLTrains(key string) (StopTimes, error) {
 	st, err := GetStopTimes(key)
 	if err != nil {
-		log.Fatal(err)
+		return StopTimes{}, err
 	}
+	lst := make(StopTimes, 0)
 	for _, s := range st {
-		/*
-		TODO(aoeu): Why does it appear that bogus timestamps are on the data? Even other sites reflect this.
+		// TODO(aoeu): Why does it appear that bogus timestamps are on the data? Even other sites reflect this.
 		if !re.Match([]byte(s.TripID)) { // TODO(aoeu): Assert that this check isn't needed.
 			log.Println("trip ID", s.TripID)
 			continue
@@ -124,7 +146,8 @@ func GetNextLTrains(key string) {
 			log.Println("arrival time happened", t)
 			continue
 		}
-		*/
-		fmt.Println(s)
+		lst = append(lst, s)
 	}
+	sort.Sort(&lst)
+	return lst, nil
 }
