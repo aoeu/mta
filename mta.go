@@ -124,11 +124,6 @@ func GetStopTimes(key string) ([]StopTime, error) {
 	return stopTimes, nil
 }
 
-func GetNextLTrains(key string) (StopTimes, error) {
-	st, err := GetStopTimes(key)
-	return st, err
-}
-
 func GetNextMontroseLTrains(key string) (StopTimes, error) {
 	st, err := GetStopTimes(key)
 	if err != nil {
