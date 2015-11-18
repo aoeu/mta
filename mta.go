@@ -7,7 +7,6 @@ import (
 	transit "github.com/aoeu/mta/transit_realtime"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"regexp"
 	"sort"
@@ -133,15 +132,15 @@ func GetNextMontroseLTrains(key string) (StopTimes, error) {
 	for _, s := range st {
 		// TODO(aoeu): Why does it appear that bogus timestamps are on the data? Even other sites reflect this.
 		if !re.Match([]byte(s.TripID)) { // TODO(aoeu): Assert that this check isn't needed.
-			log.Println("trip ID", s.TripID)
+			// log.Println("trip ID", s.TripID)
 			continue
 		}
 		if s.StopID != "L13N" {
-			log.Println("stop ID", s.StopID)
+			// log.Println("stop ID", s.StopID)
 			continue
 		}
 		if t := time.Since(s.Arrival); t > 0 {
-			log.Println("arrival time happened", t)
+			// log.Println("arrival time happened", t)
 			continue
 		}
 		lst = append(lst, s)
