@@ -2,6 +2,7 @@ package mta
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	transit "github.com/aoeu/mta/transit_realtime"
 	"github.com/golang/protobuf/proto"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -27,7 +29,8 @@ func GetFeedMessage(key string) (*transit.FeedMessage, error) {
 	url := fmt.Sprintf(URL, key)
 	resp, err := http.Get(url)
 	if err != nil {
-		return &transit.FeedMessage{}, err
+		e := errors.New(strings.Replace(err.Error(), key, "<key>", -1))
+		return &transit.FeedMessage{}, e
 	}
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
