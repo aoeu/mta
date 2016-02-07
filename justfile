@@ -3,6 +3,9 @@ default: build
 build:
 	go install cmd/ltrain.go
 
+build_arm:
+	env GOOS=linux GOARCH=arm go build cmd/ltrain.go
+
 run:
 	ltrain -key `decrypt $$ARG1`
 
