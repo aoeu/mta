@@ -18,7 +18,7 @@ func getAndLogTrainTime(key string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, s := range t[0:1] {
+	for _, s := range t[0:3] {
 		log.Println(s)
 	}
 
