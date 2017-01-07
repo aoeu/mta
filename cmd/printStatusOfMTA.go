@@ -1,7 +1,7 @@
 package main
 
 import (
-	"mta"
+	"github.com/aoeu/mta"
 )
 
 func main() {
