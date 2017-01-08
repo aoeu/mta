@@ -4,8 +4,8 @@ build:
 	go install cmd/ltrain.go
 
 build_arm:
-	env GOOS=linux GOARCH=arm go build -o bin/arm/dumpLTrainsForLCD cmd/dumpLTrainsForLCD.go
-	env GOOS=linux GOARCH=arm go build -o bin/arm/printStatusOfLTrain cmd/printStatusOfLTrain.go
+	env GOOS=linux GOARCH=arm GOARM=6 go build -o bin/arm/dumpLTrainsForLCD cmd/dumpLTrainsForLCD.go
+	env GOOS=linux GOARCH=arm GOARM=6 go build -o bin/arm/printStatusOfLTrain cmd/printStatusOfLTrain.go
 
 run:
 	ltrain -key `decrypt $$ARG1`
