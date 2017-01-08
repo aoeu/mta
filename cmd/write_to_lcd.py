@@ -1,5 +1,16 @@
 #!/usr/bin/python
 import time
+import Adafruit_CharLCD as LCD
+
+
+# Raspberry Pi pin configuration:
+lcd_rs        = 27  # Note this might need to be changed to 21 for older revision Pi's.
+lcd_en        = 22
+lcd_d4        = 25
+lcd_d5        = 24
+lcd_d6        = 23
+lcd_d7        = 18
+lcd_backlight = 4
 
 lcd_columns = 20
 lcd_rows    = 4
@@ -32,9 +43,20 @@ def readTrainTimes():
 	prevStatus = status
 	return result
 
+# Initialize the LCD using the pins above.
+lcd = LCD.Adafruit_CharLCD(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7,
+                           lcd_columns, lcd_rows, lcd_backlight)
 
 while True:
-	print readTrainTimes()
-	print "_" * lcd_columns
+	data = readTrainTimes()
+	x = 0
+	y = 0
+	for row in data:
+		for char in row:
+			lcd.set_cursor(y, x)
+			lcd.write8(ord(char), True)
+			y += 1
+		x += 1
+	print data
 	time.sleep(0.25)
 
