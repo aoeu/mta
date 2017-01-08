@@ -87,7 +87,7 @@ func (st StopTime) DeltaInUnderTwentyRunes() string {
 	s := int(time.Since(st.Arrival).Seconds()) * -1
 	m := int(s) / 60
 	ss := int(s) - (m * 60)
-	return fmt.Sprintf("%v minute %v second", m, ss)
+	return fmt.Sprintf("%2d minute %2d second", m, ss)
 }
 
 func (st StopTime) String() string {
