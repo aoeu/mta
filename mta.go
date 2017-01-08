@@ -76,12 +76,16 @@ func NewStopTime(t *transit.TripDescriptor, s *transit.TripUpdate_StopTimeUpdate
 	}
 }
 
-func (st StopTime) String() string {
+func (st StopTime) Delta() string {
 	s := int(time.Since(st.Arrival).Seconds()) * -1
 	m := int(s) / 60
 	ss := int(s) - (m * 60)
-	return fmt.Sprintf("The L train %v arrives at %v in %v minutes and %v seconds. Arrives at %v and departs at %v",
-		st.TripID, st.StopName, m, ss, st.Arrival, st.Departure)
+	return fmt.Sprintf("%v minutes and %v seconds", m, ss)
+}
+
+func (st StopTime) String() string {
+	return fmt.Sprintf("The L train %v arrives at %v in %v. Arrives at %v and departs at %v",
+		st.TripID, st.StopName, st.Delta(), st.Arrival, st.Departure)
 
 }
 
