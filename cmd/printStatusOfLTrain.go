@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/aoeu/mta"
 	"github.com/jaytaylor/html2text"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -20,6 +22,30 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error converting HTML to text: %v", err)
 		os.Exit(1)
 	}
+	switch line.Status {
+	case "GOOD SERVICE":
+		fmt.Println("Good service into Manhattan")
+	case "DELAYS":
+		fmt.Println(findTextWith("delays", out, false))
+	case "SERVICE CHANGE":
+		fmt.Println(findTextWith("trains", out, false))
+	case "PLANNED WORK":
+		fmt.Println(findTextWith("Planned Work", out, true))
+	default:
+		fmt.Println(line.Status)
+	}
+}
 
-	fmt.Println(out)
+func findTextWith(s, in string, lineAfter bool) string {
+	sc := bufio.NewScanner(strings.NewReader(in))
+	for sc.Scan() {
+		if t := sc.Text(); strings.Contains(t, s) {
+			if lineAfter {
+				sc.Scan()
+				return sc.Text()
+			}
+			return t
+		}
+	}
+	return ""
 }
