@@ -17,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 	line, err := mta.GetLine(service, "L")
-	out, err := html2text.FromReader(bytes.NewReader([]byte(line.Text)))
+	status, err := html2text.FromReader(bytes.NewReader([]byte(line.Text)))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error converting HTML to text: %v", err)
 		os.Exit(1)
@@ -26,11 +26,11 @@ func main() {
 	case "GOOD SERVICE":
 		fmt.Println("Good service into Manhattan")
 	case "DELAYS":
-		fmt.Println(findTextWith("delays", out, false))
+		fmt.Println(findTextWith("delays", status, false))
 	case "SERVICE CHANGE":
-		fmt.Println(findTextWith("trains", out, false))
+		fmt.Println(findTextWith("trains", status, false))
 	case "PLANNED WORK":
-		fmt.Println(findTextWith("Planned Work", out, true))
+		fmt.Println(findTextWith("Planned Work", status, true))
 	default:
 		fmt.Println(line.Status)
 	}
