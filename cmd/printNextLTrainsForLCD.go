@@ -5,13 +5,18 @@ import (
 "fmt"
 	"github.com/aoeu/mta"
 	"log"
+	"os"
 	"errors"
 )
 
 func main() {
 	var key string
-	flag.StringVar(&key, "key", "aoeu", "Open sesame.")
+	flag.StringVar(&key, "key", "", "Open sesame.")
 	flag.Parse()
+	if key == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
 	s, err := getNextTrainTimes(key, 3)
         if err != nil {
 		log.Fatal(err)
